@@ -5,15 +5,37 @@ const cors = require('cors')
 const hpp = require('hpp')
 const errors = require('./utils/errors')
 const errorHandler = require('./controller/error_handler')
+
 const userRoutes = require('./routes/user.routes')
+const productRoutes = require('./routes/product.routes')
+
+const session = require('express-session')
+const SessionStore = require('express-session-sequelize')(session.Store)
+const cookieParser = require('cookie-parser')
+const secret = require('./config').envConfig.SESSION_SECRET
+
+const dbConn = require('./models').connection
+
+const sessionStore = new SessionStore({
+    db: dbConn
+})
 
 const app = express();
 
 app.use(hpp())
 app.use(cors())
-
 app.use(express.json())
-//app.use(express.urlencoded())
+app.use(express.urlencoded({ extended: true }))
+
+app.use(session({
+    secret: secret,
+    saveUninitialized: false,
+    store: sessionStore,
+    resave: false
+}))
+
+//apparently no longer needed
+//app.use(cookieParser())
 
 //DDOS prevention
 app.use('/', rateLimit({
@@ -28,7 +50,7 @@ app.use('/', rateLimit({
 //Routes
 app.use('/users', userRoutes)
 
-//app.use('/product')
+app.use('/products', productRoutes)
 
 //home for testing purposes
 app.use('/', (req, res, next) => {
@@ -44,4 +66,7 @@ app.use('*', (req, res, next) => {
 
 app.use(errorHandler)
 
-module.exports = app
+module.exports = {
+    app,
+    session
+} 
