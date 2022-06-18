@@ -8,6 +8,7 @@ const errorHandler = require('./controller/error_handler')
 
 const userRoutes = require('./routes/user.routes')
 const productRoutes = require('./routes/product.routes')
+const uploadRoutes = require('./routes/upload.routes')
 
 const session = require('express-session')
 const SessionStore = require('express-session-sequelize')(session.Store)
@@ -21,6 +22,14 @@ const sessionStore = new SessionStore({
 })
 
 const app = express();
+
+// Enable CORS
+// A habilitação do CORS é necessária para o nosso teste local pois tanto o frontend como o backend estarão rodando na mesma máquina, com o mesmo IP. Dessa forma, é necessário desabilitar essa segurança para testar a nossa aplicação. No ambiente produtivo, se as aplicações precisassem ficar na mesma máquina (incomum) seria adicionado o IP da máquina ao invés do * no header Access-Control-Allow-Origin.
+app.use(function (req, res, next) {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    next();
+});
 
 app.use(hpp())
 app.use(cors())
@@ -49,8 +58,11 @@ app.use('/', rateLimit({
 
 //Routes
 app.use('/users', userRoutes)
-
 app.use('/products', productRoutes)
+app.use('/upload', uploadRoutes);
+
+// Essa linha faz o servidor disponibilizar o acesso às imagens via URL!
+app.use(express.static('public'));
 
 //home for testing purposes
 app.use('/', (req, res, next) => {
